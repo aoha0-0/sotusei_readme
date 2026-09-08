@@ -8,6 +8,7 @@ class WatchlistsController < ApplicationController
     watchlists = current_user.watchlists
 
     watchlists = watchlists.tagged_with(params[:tag]) if params[:tag].present?
+    watchlists = watchlists.title_containing(params[:title]) if params[:title].present?
 
     # 1. 「これからの予定」
     @future_watchlists = watchlists.upcoming

@@ -287,6 +287,88 @@ RSpec.describe 'Watchlists', type: :request do
         expect(response.body).not_to include(goods_watchlist.title)
       end
     end
+
+    context 'タイトルを指定した場合' do
+      it 'タイトルが部分一致する予定だけを表示する' do
+        matched_watchlist = create(
+          :watchlist,
+          user: user,
+          title: '東京ドーム公演'
+        )
+
+        unmatched_watchlist = create(
+          :watchlist,
+          user: user,
+          title: 'グッズ販売'
+        )
+
+        get watchlists_path, params: { title: '東京ドーム' }
+
+        expect(response.body).to include(matched_watchlist.title)
+        expect(response.body).not_to include(unmatched_watchlist.title)
+      end
+
+      it '他のユーザーの予定は表示しない' do
+        own_watchlist = create(
+          :watchlist,
+          user: user,
+          title: '東京ドーム公演'
+        )
+
+        other_user = create(:user)
+
+        other_watchlist = create(
+          :watchlist,
+          user: other_user,
+          title: '東京ドーム追加公演'
+        )
+
+        get watchlists_path, params: { title: '東京ドーム' }
+
+        expect(response.body).to include(own_watchlist.title)
+        expect(response.body).not_to include(other_watchlist.title)
+      end
+    end
+
+    context 'タイトルとタグを指定した場合' do
+      it '両方の条件に一致する予定だけを表示する' do
+        matched_watchlist = create(
+          :watchlist,
+          user: user,
+          title: '東京ドーム公演'
+        )
+
+        title_only_watchlist = create(
+          :watchlist,
+          user: user,
+          title: '東京ドームグッズ販売'
+        )
+
+        tag_only_watchlist = create(
+          :watchlist,
+          user: user,
+          title: '大阪公演'
+        )
+
+        matched_watchlist.tag_names = 'ライブ'
+        matched_watchlist.save_tags
+
+        title_only_watchlist.tag_names = 'グッズ'
+        title_only_watchlist.save_tags
+
+        tag_only_watchlist.tag_names = 'ライブ'
+        tag_only_watchlist.save_tags
+
+        get watchlists_path, params: {
+          title: '東京ドーム',
+          tag: 'ライブ'
+        }
+
+        expect(response.body).to include(matched_watchlist.title)
+        expect(response.body).not_to include(title_only_watchlist.title)
+        expect(response.body).not_to include(tag_only_watchlist.title)
+      end
+    end
   end
 
   describe 'GET /watchlists/:id' do
