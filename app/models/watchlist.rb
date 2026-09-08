@@ -33,9 +33,7 @@ class Watchlist < ApplicationRecord
   }, default: :not_set
 
   def reception_type_label
-    I18n.t(
-      "enums.watchlist.reception_type.#{reception_type}"
-    )
+    I18n.t("enums.watchlist.reception_type.#{reception_type}")
   end
 
   def reception_label_text
@@ -48,9 +46,7 @@ class Watchlist < ApplicationRecord
     end
   end
 
-  def display_title
-    "#{reception_label_text}#{title}"
-  end
+  def display_title = "#{reception_label_text}#{title}"
 
   def save_tags
     names = tag_names
@@ -88,12 +84,20 @@ class Watchlist < ApplicationRecord
   }
 
   scope :tagged_with, lambda { |keyword|
+    sanitized_keyword = sanitize_sql_like(keyword)
+
     where(
       id: WatchlistTag
           .joins(:tag)
-          .where('tags.name ILIKE ?', "%#{keyword}%")
+          .where('tags.name ILIKE ?', "%#{sanitized_keyword}%")
           .select(:watchlist_id)
     )
+  }
+
+  scope :title_containing, lambda { |keyword|
+    sanitized_keyword = sanitize_sql_like(keyword)
+
+    where('title ILIKE ?', "%#{sanitized_keyword}%")
   }
 
   private
